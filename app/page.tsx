@@ -10,6 +10,7 @@ import MessageList from '@/components/MessageList';
 import PostMessageForm from '@/components/PostMessageForm';
 import LocationStatus from '@/components/LocationStatus';
 import CommentSection from '@/components/CommentSection';
+import WeeklySummary from '@/components/WeeklySummary';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
 
@@ -187,6 +188,8 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      <WeeklySummary me={me} />
     </main>
   );
 }
