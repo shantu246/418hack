@@ -5,6 +5,7 @@ import { AVATARS, PING_TYPE_META } from '@/types/message';
 
 interface Props {
   messages: Message[];
+  onOpenPing?: (msg: Message) => void;
 }
 
 function formatDistance(meters?: number): string {
@@ -19,7 +20,7 @@ function formatTime(iso: string): string {
   });
 }
 
-export default function MessageList({ messages }: Props) {
+export default function MessageList({ messages, onOpenPing }: Props) {
   if (messages.length === 0) {
     return (
       <div className="text-center text-gray-600 py-10 text-sm">
@@ -36,7 +37,11 @@ export default function MessageList({ messages }: Props) {
         const isUnlockable = (msg.distance_meters ?? Infinity) <= 50;
 
         return (
-          <div key={msg.id} className="bg-gray-900 rounded-xl p-4 border border-gray-800">
+          <div
+            key={msg.id}
+            className={`bg-gray-900 rounded-xl p-4 border border-gray-800 ${isUnlockable && onOpenPing ? 'cursor-pointer hover:border-gray-600 transition-colors' : ''}`}
+            onClick={() => isUnlockable && onOpenPing?.(msg)}
+          >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xl">{avatar}</span>
               <span className="font-medium text-sm">{msg.nickname}</span>

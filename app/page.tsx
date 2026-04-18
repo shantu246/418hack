@@ -152,7 +152,7 @@ export default function HomePage() {
 
         <section>
           <h2 className="text-xs text-gray-500 uppercase tracking-widest mb-2">附近 500m 的 Pings</h2>
-          <MessageList messages={messages} />
+          <MessageList messages={messages} onOpenPing={handleOpenPing} />
         </section>
       </div>
 

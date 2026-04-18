@@ -38,12 +38,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'content, lat, lng required' }, { status: 400 });
   }
 
+  const nickname = session.username ?? '未知用户';
+  if (!nickname || nickname === 'Anonymous') {
+    return NextResponse.json({ error: '登录状态异常，请重新登录' }, { status: 401 });
+  }
+
   const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from('messages')
     .insert({
       content,
-      nickname: session.username,
+      nickname,
       avatar_id: avatar_id ?? 0,
       ping_type: ping_type ?? 'classic',
       image_url: image_url ?? null,
