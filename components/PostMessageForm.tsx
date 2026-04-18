@@ -13,7 +13,6 @@ interface Props {
 
 export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
   const [content, setContent] = useState('');
-  const [nickname, setNickname] = useState('');
   const [avatarId, setAvatarId] = useState(0);
   const [pingType, setPingType] = useState<PingType>('classic');
   const [loading, setLoading] = useState(false);
@@ -74,7 +73,6 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         content,
-        nickname: nickname || 'Anonymous',
         avatar_id: avatarId,
         ping_type: pingType,
         image_url,
@@ -134,14 +132,6 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
           ))}
         </div>
       </div>
-
-      <input
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        placeholder="昵称（可选）"
-        maxLength={30}
-        className="border rounded px-3 py-1.5 text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
 
       {/* Ping type selector */}
       <div>
