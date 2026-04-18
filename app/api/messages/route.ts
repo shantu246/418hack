@@ -22,7 +22,10 @@ export async function GET(req: NextRequest) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  // Filter out burned pings (mirage already read) on every fetch
+  const filtered = (data as { is_burned?: boolean }[]).filter((m) => !m.is_burned);
+  return NextResponse.json(filtered);
 }
 
 export async function POST(req: NextRequest) {
