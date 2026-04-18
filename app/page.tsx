@@ -72,12 +72,20 @@ export default function HomePage() {
   }, [coords]);
 
   async function handleOpenPing(msg: Message) {
-    await fetch('/api/messages/open', {
+    const res = await fetch('/api/messages/open', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: msg.id }),
     });
-    if (msg.ping_type === 'mirage') setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) alert(body.error ?? '需要登录才能查看');
+      return;
+    }
+    // Remove burned pings (mirage + whisper) from list after opening
+    if (msg.ping_type === 'mirage' || msg.ping_type === 'whisper') {
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    }
     setOpenedPing(msg);
   }
 
@@ -181,6 +189,11 @@ export default function HomePage() {
             {openedPing.ping_type === 'mirage' && (
               <p className="text-xs mt-3 px-3 py-2 rounded-lg" style={{ background: '#f59e0b18', border: '1px solid #f59e0b44', color: '#fbbf24' }}>
                 ✦ 此 Ping 已消失，无法再次查看
+              </p>
+            )}
+            {openedPing.ping_type === 'whisper' && (
+              <p className="text-xs mt-3 px-3 py-2 rounded-lg" style={{ background: '#8b5cf618', border: '1px solid #8b5cf644', color: '#c4b5fd' }}>
+                🤫 私语已被你接收，其他人无法再看到
               </p>
             )}
 

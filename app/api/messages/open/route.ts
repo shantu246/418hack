@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { readUserSession } from '@/lib/user-session';
 
 export async function POST(req: NextRequest) {
   const { id } = await req.json();
@@ -7,7 +8,6 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerSupabase();
 
-  // Fetch the ping first
   const { data: msg, error: fetchErr } = await supabase
     .from('messages')
     .select('ping_type, is_burned')
@@ -17,7 +17,14 @@ export async function POST(req: NextRequest) {
   if (fetchErr || !msg) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (msg.is_burned) return NextResponse.json({ error: 'already burned' }, { status: 410 });
 
-  // Mirage: burn after reading
+  // Whisper: only logged-in users can open, burn after first read
+  if (msg.ping_type === 'whisper') {
+    const session = readUserSession(req);
+    if (!session) return NextResponse.json({ error: '私语需要登录才能查看' }, { status: 401 });
+    await supabase.from('messages').update({ is_burned: true }).eq('id', id);
+  }
+
+  // Mirage: burn after reading (no login required)
   if (msg.ping_type === 'mirage') {
     await supabase.from('messages').update({ is_burned: true }).eq('id', id);
   }
