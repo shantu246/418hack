@@ -9,6 +9,7 @@ import { haversineMeters } from '@/lib/geo';
 import MessageList from '@/components/MessageList';
 import PostMessageForm from '@/components/PostMessageForm';
 import LocationStatus from '@/components/LocationStatus';
+import CommentSection from '@/components/CommentSection';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
 
@@ -183,6 +184,7 @@ export default function HomePage() {
             {openedPing.ping_type === 'mirage' && (
               <p className="text-amber-400 text-xs mt-3">此 Ping 已消失，无法再次查看</p>
             )}
+            <CommentSection messageId={openedPing.id} me={me} />
             <button
               onClick={() => setOpenedPing(null)}
               className="mt-4 w-full py-2 rounded-lg bg-gray-700 text-sm hover:bg-gray-600 transition-colors"
