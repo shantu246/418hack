@@ -137,7 +137,6 @@ export default function AdminPage() {
       <main className="min-h-screen bg-gray-950 text-white p-6">
         <div className="max-w-sm mx-auto mt-20 bg-gray-900 p-6 rounded-xl border border-gray-800">
           <h1 className="text-xl font-bold mb-4">管理员登录</h1>
-          <p className="text-sm text-gray-400 mb-4">默认账号：admin / admin</p>
           <form className="flex flex-col gap-3" onSubmit={handleLogin}>
             <input
               value={username}
