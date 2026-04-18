@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { readUserSession } from '@/lib/user-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +26,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = readUserSession(req);
+  if (!session) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   const body = await req.json();
-  const { content, nickname, avatar_id, ping_type, lat, lng } = body;
+  const { content, avatar_id, ping_type, lat, lng } = body;
 
   if (!content || typeof lat !== 'number' || typeof lng !== 'number') {
     return NextResponse.json({ error: 'content, lat, lng required' }, { status: 400 });
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest) {
     .from('messages')
     .insert({
       content,
-      nickname: nickname || 'Anonymous',
+      nickname: session.username,
       avatar_id: avatar_id ?? 0,
       ping_type: ping_type ?? 'classic',
       lat,

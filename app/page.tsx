@@ -20,6 +20,7 @@ export default function HomePage() {
   const [geoError, setGeoError] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [openedPing, setOpenedPing] = useState<Message | null>(null);
+  const [me, setMe] = useState<{ id: string; username: string } | null>(null);
 
   const fetchMessages = useCallback(async (lat: number, lng: number) => {
     const res = await fetch(`/api/messages?lat=${lat}&lng=${lng}&radius=500`);
@@ -27,12 +28,25 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.user as { id: string; username: string };
+      })
+      .then((user) => setMe(user))
+      .catch(() => setMe(null));
+  }, []);
+
+  useEffect(() => {
     if (!navigator.geolocation) {
-      setGeoStatus('error');
-      setGeoError('浏览器不支持 Geolocation API');
+      setTimeout(() => {
+        setGeoStatus('error');
+        setGeoError('浏览器不支持 Geolocation API');
+      }, 0);
       return;
     }
-    setGeoStatus('loading');
+    setTimeout(() => setGeoStatus('loading'), 0);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -40,7 +54,12 @@ export default function HomePage() {
         setGeoStatus('success');
         fetchMessages(latitude, longitude);
       },
-      (err) => { setGeoStatus('error'); setGeoError(err.message); },
+      (err) => {
+        setTimeout(() => {
+          setGeoStatus('error');
+          setGeoError(err.message);
+        }, 0);
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [fetchMessages]);
@@ -86,6 +105,33 @@ export default function HomePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="flex items-center gap-2 text-sm">
+          {me ? (
+            <>
+              <span className="text-gray-300">已登录：{me.username}</span>
+              <button
+                className="ml-auto px-3 py-1.5 rounded bg-gray-800 border border-gray-700"
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  setMe(null);
+                }}
+              >
+                退出
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-gray-400">未登录</span>
+              <a
+                href="/auth"
+                className="ml-auto px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500"
+              >
+                登录/注册
+              </a>
+            </>
+          )}
+        </div>
+
         <LocationStatus status={geoStatus} error={geoError} />
 
         {coords && (

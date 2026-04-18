@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Message, PingType } from '@/types/message';
 import { PING_TYPE_META, AVATARS } from '@/types/message';
 
@@ -12,12 +12,23 @@ interface Props {
 
 export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
   const [content, setContent] = useState('');
-  const [nickname, setNickname] = useState('');
   const [avatarId, setAvatarId] = useState(0);
   const [pingType, setPingType] = useState<PingType>('classic');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const [me, setMe] = useState<{ id: string; username: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.user as { id: string; username: string };
+      })
+      .then((user) => setMe(user))
+      .catch(() => setMe(null));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +41,6 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         content,
-        nickname: nickname || 'Anonymous',
         avatar_id: avatarId,
         ping_type: pingType,
         lat: userLat,
@@ -62,6 +72,27 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
     );
   }
 
+  if (!me) {
+    return (
+      <div className="p-4 bg-gray-900 rounded-xl border border-gray-800">
+        <p className="text-sm text-gray-200 mb-3">发送 ping 需要先登录你的账号</p>
+        <a
+          href="/auth"
+          className="inline-block px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm"
+        >
+          去登录/注册
+        </a>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="ml-3 inline-block px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm"
+        >
+          取消
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 bg-white rounded-xl shadow">
       <div className="flex items-center justify-between">
@@ -87,14 +118,6 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
           ))}
         </div>
       </div>
-
-      <input
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        placeholder="昵称（可选）"
-        maxLength={30}
-        className="border rounded px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
 
       {/* Ping type selector */}
       <div>
