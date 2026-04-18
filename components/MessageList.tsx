@@ -50,7 +50,12 @@ export default function MessageList({ messages }: Props) {
             </div>
 
             {isUnlockable ? (
-              <p className="text-gray-200 text-sm leading-relaxed">{msg.content}</p>
+              <>
+                <p className="text-gray-200 text-sm leading-relaxed">{msg.content}</p>
+                {msg.image_url && (
+                  <img src={msg.image_url} alt="ping图片" className="mt-2 w-full rounded-lg max-h-48 object-cover" />
+                )}
+              </>
             ) : (
               <p className="text-gray-600 text-sm italic">靠近 50m 内才能解锁此 Ping</p>
             )}

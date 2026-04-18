@@ -20,6 +20,7 @@ export default function HomePage() {
   const [geoError, setGeoError] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [openedPing, setOpenedPing] = useState<Message | null>(null);
+  const [me, setMe] = useState<{ id: string; username: string } | null>(null);
 
   const fetchMessages = useCallback(async (lat: number, lng: number) => {
     const res = await fetch(`/api/messages?lat=${lat}&lng=${lng}&radius=500`);
@@ -27,12 +28,25 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.user as { id: string; username: string };
+      })
+      .then((user) => setMe(user))
+      .catch(() => setMe(null));
+  }, []);
+
+  useEffect(() => {
     if (!navigator.geolocation) {
-      setGeoStatus('error');
-      setGeoError('浏览器不支持 Geolocation API');
+      setTimeout(() => {
+        setGeoStatus('error');
+        setGeoError('浏览器不支持 Geolocation API');
+      }, 0);
       return;
     }
-    setGeoStatus('loading');
+    setTimeout(() => setGeoStatus('loading'), 0);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -40,12 +54,16 @@ export default function HomePage() {
         setGeoStatus('success');
         fetchMessages(latitude, longitude);
       },
-      (err) => { setGeoStatus('error'); setGeoError(err.message); },
+      (err) => {
+        setTimeout(() => {
+          setGeoStatus('error');
+          setGeoError(err.message);
+        }, 0);
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [fetchMessages]);
 
-  // Realtime new pings
   useEffect(() => {
     if (!coords) return;
     const channel = supabase
@@ -63,18 +81,14 @@ export default function HomePage() {
   }, [coords]);
 
   async function handleOpenPing(msg: Message) {
-    // Call open API (burns mirage pings)
     await fetch('/api/messages/open', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: msg.id }),
     });
-
-    // If mirage, remove from list after viewing
     if (msg.ping_type === 'mirage') {
       setMessages((prev) => prev.filter((m) => m.id !== msg.id));
     }
-
     setOpenedPing(msg);
   }
 
@@ -86,6 +100,30 @@ export default function HomePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="flex items-center gap-2 text-sm">
+          {me ? (
+            <>
+              <span className="text-gray-300">已登录：{me.username}</span>
+              <button
+                className="ml-auto px-3 py-1.5 rounded bg-gray-800 border border-gray-700"
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  setMe(null);
+                }}
+              >
+                退出
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-gray-400">未登录</span>
+              <a href="/auth" className="ml-auto px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500">
+                登录/注册
+              </a>
+            </>
+          )}
+        </div>
+
         <LocationStatus status={geoStatus} error={geoError} />
 
         {coords && (
@@ -97,12 +135,18 @@ export default function HomePage() {
           />
         )}
 
-        {coords && (
+        {coords && me && (
           <PostMessageForm
             userLat={coords.lat}
             userLng={coords.lng}
             onPosted={(msg) => setMessages((prev) => [msg, ...prev])}
           />
+        )}
+
+        {coords && !me && (
+          <p className="text-center text-gray-500 text-sm py-2">
+            <a href="/auth" className="text-blue-400 hover:underline">登录</a> 后才能留下 Ping
+          </p>
         )}
 
         <section>
@@ -111,7 +155,6 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Ping detail modal */}
       {openedPing && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-6"
@@ -134,6 +177,9 @@ export default function HomePage() {
               </div>
             </div>
             <p className="text-gray-200 leading-relaxed">{openedPing.content}</p>
+            {openedPing.image_url && (
+              <img src={openedPing.image_url} alt="ping图片" className="mt-3 w-full rounded-lg max-h-60 object-cover" />
+            )}
             {openedPing.ping_type === 'mirage' && (
               <p className="text-amber-400 text-xs mt-3">此 Ping 已消失，无法再次查看</p>
             )}

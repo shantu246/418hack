@@ -40,7 +40,9 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    fetchMessages();
+    setTimeout(() => {
+      fetchMessages();
+    }, 0);
   }, [fetchMessages]);
 
   async function handleLogin(e: React.FormEvent) {
@@ -136,7 +138,7 @@ export default function AdminPage() {
             <thead className="bg-gray-900">
               <tr className="text-left text-gray-300">
                 <th className="p-3">时间</th>
-                <th className="p-3">昵称</th>
+                <th className="p-3">用户名</th>
                 <th className="p-3">类型</th>
                 <th className="p-3">内容</th>
                 <th className="p-3">坐标</th>

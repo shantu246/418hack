@@ -11,6 +11,7 @@ export interface Message {
   created_at: string;
   distance_meters?: number;
   is_burned?: boolean;
+  image_url?: string | null;
 }
 
 export const PING_TYPE_META: Record<PingType, { label: string; desc: string; color: string }> = {
