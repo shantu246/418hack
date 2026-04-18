@@ -5,11 +5,28 @@ import { readUserSession } from '@/lib/user-session';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const supabase = createServerSupabase();
+
+  const { data: msg, error: msgErr } = await supabase
+    .from('messages')
+    .select('ping_type, nickname')
+    .eq('id', id)
+    .single();
+
+  if (msgErr || !msg) return NextResponse.json({ error: 'not found' }, { status: 404 });
+
+  if (msg.ping_type === 'whisper') {
+    const session = readUserSession(req);
+    if (!session) return NextResponse.json({ error: '请先登录' }, { status: 401 });
+    if (msg.nickname !== session.username) {
+      return NextResponse.json({ error: '无权限查看该私语' }, { status: 403 });
+    }
+  }
+
   const { data, error } = await supabase
     .from('comments')
     .select('*')
@@ -35,6 +52,19 @@ export async function POST(
   }
 
   const supabase = createServerSupabase();
+
+  const { data: msg, error: msgErr } = await supabase
+    .from('messages')
+    .select('ping_type, nickname')
+    .eq('id', id)
+    .single();
+
+  if (msgErr || !msg) return NextResponse.json({ error: 'not found' }, { status: 404 });
+
+  if (msg.ping_type === 'whisper' && msg.nickname !== session.username) {
+    return NextResponse.json({ error: '无权限评论该私语' }, { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from('comments')
     .insert({

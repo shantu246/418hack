@@ -10,18 +10,20 @@ export async function POST(req: NextRequest) {
 
   const { data: msg, error: fetchErr } = await supabase
     .from('messages')
-    .select('ping_type, is_burned')
+    .select('ping_type, is_burned, nickname')
     .eq('id', id)
     .single();
 
   if (fetchErr || !msg) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (msg.is_burned) return NextResponse.json({ error: 'already burned' }, { status: 410 });
 
-  // Whisper: only logged-in users can open, burn after first read
+  // Whisper: only sender can open
   if (msg.ping_type === 'whisper') {
     const session = readUserSession(req);
     if (!session) return NextResponse.json({ error: '私语需要登录才能查看' }, { status: 401 });
-    await supabase.from('messages').update({ is_burned: true }).eq('id', id);
+    if (msg.nickname !== session.username) {
+      return NextResponse.json({ error: '无权限查看该私语' }, { status: 403 });
+    }
   }
 
   // Mirage: burn after reading (no login required)

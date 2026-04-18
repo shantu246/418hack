@@ -5,6 +5,7 @@ import { readUserSession } from '@/lib/user-session';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const session = readUserSession(req);
   const { searchParams } = req.nextUrl;
   const lat = parseFloat(searchParams.get('lat') ?? '');
   const lng = parseFloat(searchParams.get('lng') ?? '');
@@ -24,7 +25,13 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Filter out burned pings (mirage already read) on every fetch
-  const filtered = (data as { is_burned?: boolean }[]).filter((m) => !m.is_burned);
+  const filtered = (data as { is_burned?: boolean; ping_type?: string; nickname?: string }[])
+    .filter((m) => !m.is_burned)
+    .filter((m) => {
+      if (m.ping_type !== 'whisper') return true;
+      if (!session) return false;
+      return m.nickname === session.username;
+    });
   return NextResponse.json(filtered);
 }
 
