@@ -93,7 +93,7 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
         onChange={(e) => setNickname(e.target.value)}
         placeholder="昵称（可选）"
         maxLength={30}
-        className="border rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="border rounded px-3 py-1.5 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
 
       {/* Ping type selector */}
@@ -126,7 +126,7 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
         placeholder="写下你想留在此处的话..."
         maxLength={500}
         rows={3}
-        className="border rounded px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="border rounded px-3 py-1.5 text-sm text-gray-900 bg-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
 
       <div className="flex justify-between items-center">
