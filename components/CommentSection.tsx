@@ -52,31 +52,34 @@ export default function CommentSection({ messageId, me }: Props) {
       body: JSON.stringify({ content: text.trim(), avatar_id: 0 }),
     });
     setSending(false);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? '评论失败');
-      return;
-    }
+    if (!res.ok) { const body = await res.json().catch(() => ({})); setError(body.error ?? '评论失败'); return; }
     const newComment: Comment = await res.json();
     setComments((prev) => [...prev, newComment]);
     setText('');
   }
 
   return (
-    <div className="mt-4 border-t border-gray-700 pt-3">
-      <p className="text-xs text-gray-500 mb-2 uppercase tracking-widest">评论 · {comments.length}</p>
+    <div className="mt-4 pt-4" style={{ borderTop: '1px solid #1e1e28' }}>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#444' }}>
+        评论 · {comments.length}
+      </p>
 
-      <div className="flex flex-col gap-2 max-h-40 overflow-y-auto mb-3 pr-1">
+      <div className="flex flex-col gap-3 max-h-40 overflow-y-auto mb-3 pr-1">
         {comments.length === 0 && (
-          <p className="text-xs text-gray-600 italic">还没有评论，来说第一句话</p>
+          <p className="text-xs italic" style={{ color: '#333' }}>还没有评论，来说第一句话</p>
         )}
         {comments.map((c) => (
           <div key={c.id} className="flex items-start gap-2">
-            <span className="text-base leading-none mt-0.5">{AVATARS[c.avatar_id ?? 0]}</span>
+            <span style={{ background: '#1e1e2a', borderRadius: 8, width: 26, height: 26, fontSize: 14, flexShrink: 0 }}
+              className="flex items-center justify-center">
+              {AVATARS[c.avatar_id ?? 0]}
+            </span>
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium text-gray-300">{c.nickname}</span>
-              <span className="text-xs text-gray-600 ml-2">{formatTime(c.created_at)}</span>
-              <p className="text-sm text-gray-200 leading-snug break-words">{c.content}</p>
+              <div className="flex items-baseline gap-2 mb-0.5">
+                <span className="text-xs font-medium text-white">{c.nickname}</span>
+                <span className="text-xs" suppressHydrationWarning style={{ color: '#333' }}>{formatTime(c.created_at)}</span>
+              </div>
+              <p className="text-sm leading-snug break-words" style={{ color: '#c4c4d4' }}>{c.content}</p>
             </div>
           </div>
         ))}
@@ -90,22 +93,21 @@ export default function CommentSection({ messageId, me }: Props) {
             onChange={(e) => setText(e.target.value)}
             placeholder="写下你的评论…"
             maxLength={200}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ background: '#1e1e2a', border: '1px solid #2a2a3a', borderRadius: 10, color: 'white', flex: 1 }}
+            className="px-3 py-1.5 text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
           />
-          <button
-            type="submit"
-            disabled={sending || !text.trim()}
-            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white disabled:opacity-40 transition-colors"
-          >
+          <button type="submit" disabled={sending || !text.trim()}
+            style={{ background: 'linear-gradient(135deg,#6e56cf,#4f46e5)', borderRadius: 10, color: 'white', border: 'none', padding: '6px 14px', fontSize: 13, opacity: sending || !text.trim() ? 0.4 : 1 }}
+            className="font-medium transition-opacity hover:opacity-90">
             {sending ? '…' : '发送'}
           </button>
         </form>
       ) : (
-        <p className="text-xs text-gray-500">
-          <a href="/auth" className="text-blue-400 hover:underline">登录</a> 后才能评论
+        <p className="text-xs" style={{ color: '#444' }}>
+          <a href="/auth" style={{ color: '#a78bfa' }} className="hover:underline">登录</a> 后才能评论
         </p>
       )}
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+      {error && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{error}</p>}
     </div>
   );
 }

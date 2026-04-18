@@ -41,10 +41,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setTimeout(() => {
-        setGeoStatus('error');
-        setGeoError('浏览器不支持 Geolocation API');
-      }, 0);
+      setTimeout(() => { setGeoStatus('error'); setGeoError('浏览器不支持 Geolocation API'); }, 0);
       return;
     }
     setTimeout(() => setGeoStatus('loading'), 0);
@@ -55,12 +52,7 @@ export default function HomePage() {
         setGeoStatus('success');
         fetchMessages(latitude, longitude);
       },
-      (err) => {
-        setTimeout(() => {
-          setGeoStatus('error');
-          setGeoError(err.message);
-        }, 0);
-      },
+      (err) => { setTimeout(() => { setGeoStatus('error'); setGeoError(err.message); }, 0); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [fetchMessages]);
@@ -72,10 +64,7 @@ export default function HomePage() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = payload.new as Message;
         const dist = haversineMeters(coords.lat, coords.lng, newMsg.lat, newMsg.lng);
-        if (dist <= 500) {
-          newMsg.distance_meters = dist;
-          setMessages((prev) => [newMsg, ...prev]);
-        }
+        if (dist <= 500) { newMsg.distance_meters = dist; setMessages((prev) => [newMsg, ...prev]); }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -87,39 +76,46 @@ export default function HomePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: msg.id }),
     });
-    if (msg.ping_type === 'mirage') {
-      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
-    }
+    if (msg.ping_type === 'mirage') setMessages((prev) => prev.filter((m) => m.id !== msg.id));
     setOpenedPing(msg);
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <header className="px-4 py-3 flex items-center gap-2 border-b border-gray-800">
-        <span className="text-2xl font-black tracking-tight text-white">ping</span>
-        <span className="text-gray-500 text-sm ml-auto">在你所在之处留下印记</span>
+    <main className="min-h-screen text-white" style={{ background: '#0e0e10' }}>
+      {/* Header */}
+      <header style={{ borderBottom: '1px solid #1e1e28', background: 'rgba(14,14,16,0.85)', backdropFilter: 'blur(12px)' }}
+        className="sticky top-0 z-40 px-5 py-3 flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span style={{ background: 'linear-gradient(135deg,#6e56cf,#3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+            className="text-2xl font-black tracking-tight">ping</span>
+          <span style={{ background: '#6e56cf22', border: '1px solid #6e56cf55', color: '#a78bfa' }}
+            className="text-xs px-2 py-0.5 rounded-full font-medium">BETA</span>
+        </div>
+        <span className="text-sm ml-auto" style={{ color: '#6b6b80' }}>在你所在之处留下印记</span>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-4 flex flex-col gap-4">
-        <div className="flex items-center gap-2 text-sm">
+      <div className="max-w-lg mx-auto px-4 py-5 flex flex-col gap-5">
+        {/* Auth bar */}
+        <div style={{ background: '#16161e', border: '1px solid #1e1e28', borderRadius: 12 }}
+          className="px-4 py-2.5 flex items-center gap-2 text-sm">
           {me ? (
             <>
-              <span className="text-gray-300">已登录：{me.username}</span>
+              <span style={{ color: '#a78bfa' }}>◉</span>
+              <span style={{ color: '#c4c4d4' }}>已登录：<span className="font-medium text-white">{me.username}</span></span>
               <button
-                className="ml-auto px-3 py-1.5 rounded bg-gray-800 border border-gray-700"
-                onClick={async () => {
-                  await fetch('/api/auth/logout', { method: 'POST' });
-                  setMe(null);
-                }}
-              >
-                退出
-              </button>
+                style={{ background: '#1e1e2a', border: '1px solid #2a2a3a', color: '#888', borderRadius: 8 }}
+                className="ml-auto px-3 py-1 text-xs hover:text-white transition-colors"
+                onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setMe(null); }}
+              >退出</button>
             </>
           ) : (
             <>
-              <span className="text-gray-400">未登录</span>
-              <a href="/auth" className="ml-auto px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500">
-                登录/注册
+              <span style={{ color: '#444' }}>○</span>
+              <span style={{ color: '#666' }}>未登录</span>
+              <a href="/auth"
+                style={{ background: 'linear-gradient(135deg,#6e56cf,#4f46e5)', borderRadius: 8, color: 'white' }}
+                className="ml-auto px-3 py-1 text-xs font-medium hover:opacity-90 transition-opacity">
+                登录 / 注册
               </a>
             </>
           )}
@@ -128,69 +124,66 @@ export default function HomePage() {
         <LocationStatus status={geoStatus} error={geoError} />
 
         {coords && (
-          <MapView
-            userLat={coords.lat}
-            userLng={coords.lng}
-            messages={messages}
-            onOpenPing={handleOpenPing}
-          />
+          <MapView userLat={coords.lat} userLng={coords.lng} messages={messages} onOpenPing={handleOpenPing} />
         )}
 
         {coords && me && (
-          <PostMessageForm
-            userLat={coords.lat}
-            userLng={coords.lng}
-            onPosted={(msg) => setMessages((prev) => [msg, ...prev])}
-          />
+          <PostMessageForm userLat={coords.lat} userLng={coords.lng} onPosted={(msg) => setMessages((prev) => [msg, ...prev])} />
         )}
 
         {coords && !me && (
-          <p className="text-center text-gray-500 text-sm py-2">
-            <a href="/auth" className="text-blue-400 hover:underline">登录</a> 后才能留下 Ping
+          <p className="text-center text-sm py-2" style={{ color: '#555' }}>
+            <a href="/auth" style={{ color: '#a78bfa' }} className="hover:underline">登录</a> 后才能留下 Ping
           </p>
         )}
 
         <section>
-          <h2 className="text-xs text-gray-500 uppercase tracking-widest mb-2">附近 500m 的 Pings</h2>
+          <div className="flex items-center gap-2 mb-3">
+            <div style={{ width: 3, height: 14, background: 'linear-gradient(180deg,#6e56cf,#3b82f6)', borderRadius: 2 }} />
+            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6b6b80' }}>附近 500m 的 Pings</h2>
+          </div>
           <MessageList messages={messages} onOpenPing={handleOpenPing} />
         </section>
       </div>
 
+      {/* Ping detail modal */}
       {openedPing && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-6"
-          onClick={() => setOpenedPing(null)}
-        >
+        <div className="fixed inset-0 flex items-center justify-center z-50 px-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setOpenedPing(null)}>
           <div
-            className="bg-gray-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+            style={{ background: '#16161e', border: '1px solid #2a2a3a', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(110,86,207,0.1)' }}
+            className="max-w-sm w-full p-5 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            {/* Ping header */}
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{AVATARS[openedPing.avatar_id ?? 0]}</span>
-              <div>
-                <p className="font-semibold">{openedPing.nickname}</p>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full text-white"
-                  style={{ background: PING_TYPE_META[openedPing.ping_type].color }}
-                >
+              <div style={{ background: '#1e1e2a', borderRadius: 12, width: 44, height: 44 }}
+                className="flex items-center justify-center text-2xl flex-shrink-0">
+                {AVATARS[openedPing.avatar_id ?? 0]}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-white truncate">{openedPing.nickname}</p>
+                <span className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
+                  style={{ background: PING_TYPE_META[openedPing.ping_type].color + 'cc' }}>
                   {PING_TYPE_META[openedPing.ping_type].label}
                 </span>
               </div>
+              <button onClick={() => setOpenedPing(null)}
+                style={{ color: '#555', marginLeft: 'auto', flexShrink: 0 }}
+                className="hover:text-white transition-colors text-lg leading-none">✕</button>
             </div>
-            <p className="text-gray-200 leading-relaxed">{openedPing.content}</p>
+
+            <p className="leading-relaxed mb-1" style={{ color: '#c4c4d4' }}>{openedPing.content}</p>
             {openedPing.image_url && (
-              <img src={openedPing.image_url} alt="ping图片" className="mt-3 w-full rounded-lg max-h-60 object-cover" />
+              <img src={openedPing.image_url} alt="ping图片" className="mt-3 w-full object-cover" style={{ borderRadius: 12, maxHeight: 240 }} />
             )}
             {openedPing.ping_type === 'mirage' && (
-              <p className="text-amber-400 text-xs mt-3">此 Ping 已消失，无法再次查看</p>
+              <p className="text-xs mt-3 px-3 py-2 rounded-lg" style={{ background: '#f59e0b18', border: '1px solid #f59e0b44', color: '#fbbf24' }}>
+                ✦ 此 Ping 已消失，无法再次查看
+              </p>
             )}
+
             <CommentSection messageId={openedPing.id} me={me} />
-            <button
-              onClick={() => setOpenedPing(null)}
-              className="mt-4 w-full py-2 rounded-lg bg-gray-700 text-sm hover:bg-gray-600 transition-colors"
-            >
-              关闭
-            </button>
           </div>
         </div>
       )}
