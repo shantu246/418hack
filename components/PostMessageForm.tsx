@@ -55,7 +55,12 @@ export default function PostMessageForm({ userLat, userLng, onPosted }: Props) {
     let image_url: string | null = null;
     if (imageFile) {
       try { image_url = await uploadImage(imageFile); }
-      catch (err: any) { setError('图片上传失败：' + err.message); setLoading(false); return; }
+      catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError('图片上传失败：' + message);
+        setLoading(false);
+        return;
+      }
     }
 
     const res = await fetch('/api/messages', {
