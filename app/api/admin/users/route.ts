@@ -9,12 +9,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = req.nextUrl;
-  const username = (searchParams.get('username') ?? '').trim();
-
   const supabase = createServerSupabase();
-  const query = supabase.from('messages').select('*').order('created_at', { ascending: false });
-  const { data, error } = username ? await query.eq('nickname', username) : await query;
+  const { data, error } = await supabase
+    .from('app_users')
+    .select('id, username, created_at')
+    .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
@@ -32,8 +31,19 @@ export async function DELETE(req: NextRequest) {
   }
 
   const supabase = createServerSupabase();
-  const { error } = await supabase.from('messages').delete().eq('id', id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const { data: user, error: fetchErr } = await supabase
+    .from('app_users')
+    .select('id, username')
+    .eq('id', id)
+    .single();
+  if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+
+  const { error: delMsgErr } = await supabase.from('messages').delete().eq('nickname', user.username);
+  if (delMsgErr) return NextResponse.json({ error: delMsgErr.message }, { status: 500 });
+
+  const { error: delUserErr } = await supabase.from('app_users').delete().eq('id', id);
+  if (delUserErr) return NextResponse.json({ error: delUserErr.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }

@@ -7,20 +7,30 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleString('zh-CN');
 }
 
+type AdminUser = {
+  id: string;
+  username: string;
+  created_at: string;
+};
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUsername, setSelectedUsername] = useState<string>('');
 
-  const fetchMessages = useCallback(async () => {
+  const fetchMessages = useCallback(async (filterUsername?: string) => {
     setLoadingMessages(true);
     setActionError('');
-    const res = await fetch('/api/admin/messages', { cache: 'no-store' });
+    const u = (filterUsername ?? '').trim();
+    const res = await fetch(u ? `/api/admin/messages?username=${encodeURIComponent(u)}` : '/api/admin/messages', { cache: 'no-store' });
     setLoadingMessages(false);
 
     if (res.status === 401) {
@@ -37,6 +47,27 @@ export default function AdminPage() {
     const data: Message[] = await res.json();
     setMessages(data);
     setAuthed(true);
+    setSelectedUsername(u);
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    setLoadingUsers(true);
+    const res = await fetch('/api/admin/users', { cache: 'no-store' });
+    setLoadingUsers(false);
+
+    if (res.status === 401) {
+      setAuthed(false);
+      setUsers([]);
+      return;
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setActionError(body.error ?? '获取用户失败');
+      return;
+    }
+
+    const data: AdminUser[] = await res.json();
+    setUsers(data);
   }, []);
 
   useEffect(() => {
@@ -60,12 +91,15 @@ export default function AdminPage() {
     }
     setAuthed(true);
     fetchMessages();
+    fetchUsers();
   }
 
   async function handleLogout() {
     await fetch('/api/admin/logout', { method: 'POST' });
     setAuthed(false);
     setMessages([]);
+    setUsers([]);
+    setSelectedUsername('');
   }
 
   async function handleDelete(id: string) {
@@ -77,6 +111,21 @@ export default function AdminPage() {
       return;
     }
     setMessages((prev) => prev.filter((m) => m.id !== id));
+  }
+
+  async function handleDeleteUser(user: AdminUser) {
+    if (!confirm(`确认删除用户 ${user.username} 吗？将同时删除该用户发布的所有 ping，并释放用户名。`)) return;
+    const res = await fetch(`/api/admin/users?id=${encodeURIComponent(user.id)}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setActionError(body.error ?? '删除用户失败');
+      return;
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    if (selectedUsername === user.username) {
+      setSelectedUsername('');
+      fetchMessages('');
+    }
   }
 
   if (authed === null) {
@@ -117,7 +166,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3 mb-4">
           <h1 className="text-2xl font-bold">Ping 后台管理</h1>
           <button
-            onClick={fetchMessages}
+            onClick={() => { fetchUsers(); fetchMessages(selectedUsername); }}
             className="px-3 py-1.5 text-sm rounded bg-gray-800 border border-gray-700"
           >
             刷新
@@ -131,51 +180,99 @@ export default function AdminPage() {
         </div>
 
         {actionError && <p className="text-red-400 mb-3">{actionError}</p>}
-        {loadingMessages && <p className="text-gray-400 mb-3">正在加载 pings...</p>}
+        {(loadingUsers || loadingMessages) && <p className="text-gray-400 mb-3">正在加载...</p>}
 
-        <div className="overflow-x-auto border border-gray-800 rounded-xl">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-900">
-              <tr className="text-left text-gray-300">
-                <th className="p-3">时间</th>
-                <th className="p-3">用户名</th>
-                <th className="p-3">类型</th>
-                <th className="p-3">内容</th>
-                <th className="p-3">坐标</th>
-                <th className="p-3">状态</th>
-                <th className="p-3">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {messages.map((msg) => (
-                <tr key={msg.id} className="border-t border-gray-800 align-top">
-                  <td className="p-3 text-gray-300 whitespace-nowrap">{formatTime(msg.created_at)}</td>
-                  <td className="p-3">{msg.nickname}</td>
-                  <td className="p-3">{msg.ping_type}</td>
-                  <td className="p-3 max-w-lg break-words">{msg.content}</td>
-                  <td className="p-3 text-xs text-gray-400">
-                    {msg.lat.toFixed(6)}, {msg.lng.toFixed(6)}
-                  </td>
-                  <td className="p-3">{msg.is_burned ? '已焚毁' : '正常'}</td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleDelete(msg.id)}
-                      className="px-2 py-1 text-xs rounded bg-red-700 hover:bg-red-600"
-                    >
-                      删除
-                    </button>
-                  </td>
-                </tr>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="md:col-span-2 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-gray-900 px-3 py-2 flex items-center gap-2">
+              <span className="text-sm font-semibold">用户</span>
+              <span className="text-xs text-gray-500 ml-auto">{users.length}</span>
+            </div>
+            <div className="max-h-[520px] overflow-auto">
+              {users.map((u) => (
+                <div key={u.id} className="border-t border-gray-800 px-3 py-2 flex items-center gap-2">
+                  <button
+                    className={`text-sm ${selectedUsername === u.username ? 'text-white' : 'text-gray-300'} hover:text-white`}
+                    onClick={() => { fetchMessages(u.username); }}
+                  >
+                    {u.username}
+                  </button>
+                  <span className="text-xs text-gray-600 ml-auto whitespace-nowrap">{formatTime(u.created_at)}</span>
+                  <button
+                    className="ml-2 px-2 py-1 text-xs rounded bg-red-700 hover:bg-red-600"
+                    onClick={() => handleDeleteUser(u)}
+                  >
+                    删除用户
+                  </button>
+                </div>
               ))}
-              {messages.length === 0 && !loadingMessages && (
-                <tr>
-                  <td className="p-6 text-gray-500" colSpan={7}>
-                    当前没有任何 ping
-                  </td>
-                </tr>
+              {users.length === 0 && !loadingUsers && (
+                <div className="p-4 text-sm text-gray-500">暂无注册用户</div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          <div className="md:col-span-3 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-gray-900 px-3 py-2 flex items-center gap-2">
+              <span className="text-sm font-semibold">
+                {selectedUsername ? `pings（${selectedUsername}）` : '全部 pings'}
+              </span>
+              {selectedUsername && (
+                <button
+                  className="ml-auto px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700"
+                  onClick={() => fetchMessages('')}
+                >
+                  清除筛选
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-950">
+                  <tr className="text-left text-gray-300">
+                    <th className="p-3">时间</th>
+                    <th className="p-3">用户名</th>
+                    <th className="p-3">类型</th>
+                    <th className="p-3">内容</th>
+                    <th className="p-3">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map((msg) => (
+                    <tr key={msg.id} className="border-t border-gray-800 align-top">
+                      <td className="p-3 text-gray-300 whitespace-nowrap">{formatTime(msg.created_at)}</td>
+                      <td className="p-3">
+                        <button
+                          className="text-gray-300 hover:text-white"
+                          onClick={() => fetchMessages(msg.nickname)}
+                        >
+                          {msg.nickname}
+                        </button>
+                      </td>
+                      <td className="p-3">{msg.ping_type}</td>
+                      <td className="p-3 max-w-lg break-words">{msg.content}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => handleDelete(msg.id)}
+                          className="px-2 py-1 text-xs rounded bg-red-700 hover:bg-red-600"
+                        >
+                          删除 ping
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {messages.length === 0 && !loadingMessages && (
+                    <tr>
+                      <td className="p-6 text-gray-500" colSpan={5}>
+                        当前没有任何 ping
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </main>

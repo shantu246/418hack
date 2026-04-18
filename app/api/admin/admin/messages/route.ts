@@ -9,11 +9,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
+  const { searchParams } = req.nextUrl;
+  const username = (searchParams.get('username') ?? '').trim();
+
   const supabase = createServerSupabase();
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const query = supabase.from('messages').select('*').order('created_at', { ascending: false });
+  const { data, error } = username ? await query.eq('nickname', username) : await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
