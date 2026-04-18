@@ -1,86 +1,36 @@
-# ping - 黑客松项目提案
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## 1. 项目愿景 (Vision)
-**“每一次跳动，都是一个 ping。”**
-“ping”是一款基于地理位置的社交记录应用。它鼓励用户走出家门，去真实的世界探索。用户可以在特定的地理位置发送一个 “ping”，记录当下的心情、见闻或美景。所有人的 ping 汇聚在一起，形成了 “pings”。当其他用户（或未来的你）来到同一地点时，便能 “open a ping”，实现一场跨越时间的对话。
+## Getting Started
 
----
+First, run the development server:
 
-## 2. 核心功能 (Core Features)
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-### 2.1 地理位置记录 (ping)
-- **发送 (ping)**：用户到达某一地点后，可创建一个包含文字、照片或短视频的 ping。支持“即时拍照”模式，确保内容的真实性。
-- **触发与开启 (open a ping)**：
-    - **雷达模式**：App 界面显示周围 500 米内的 pings 模糊分布（热力图），不显示具体位置。
-    - **精准开启 (open a ping)**：当物理距离 < 50 米时，该 ping 将在地图上显示为可点击标记，用户手动点击即可解锁并 open。
-- **多样化形式**：
-    - **私语 (Whisper)**：仅限单人查看的文字 ping。
-    - **幻影 (Mirage)**：阅后即焚的照片/视频 ping。
-    - **经典 (Classic)**：永久保留的记忆。
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### 2.2 半匿名社交机制 (Semi-Anonymity)
-- **双重身份层**：
-    - **实名层 (Admin Only)**：绑定手机号/实名信息，仅供后台风控和法律追溯使用。
-    - **匿名层 (User Facing)**：
-        - **自定义昵称**：注册时由用户手动设定，全局唯一且不可重复；后续可在设置中修改一次，确保身份连贯。
-        - **虚拟形象**：提供一组极简风格的预设头像，同时支持上传图片自定义头像，消除容貌焦虑并保留个性表达。
-- **交互边界**：
-    - 允许匿名点赞和简单的表情回应。
-    - 禁止私信（防止骚扰），仅允许在特定的 ping 下进行公开但匿名的评论流。
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### 2.3 AI 智能月报 (AI Monthly Journey)
-- **数据维度**：
-    - **地理足迹**：本月打卡的城市、街道、自然景观比例，以及你发出的 pings 数量。
-    - **情感基调**：通过 NLP 分析用户发送的 ping 内容，提炼本月情绪关键词（如“平静”、“惊喜”、“怀旧”）。
-- **AI 叙事生成**：
-    - “这个月，你走过了 12 个街角，留下了 5 个 ping。在雨后的外滩，你曾感叹天空的颜色...”
-    - 生成一份可分享的精美海报。
-- **智能发现 (AI Discovery)**：
-    - 根据月报轨迹，推荐“与你灵魂相似的人”发过 ping 但你还没去过的地方。
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
----
+## Learn More
 
-## 3. 产品亮点 (Highlights)
-- **真实社交**：强制地理位置验证，通过每一次 ping 记录真实生活，鼓励用户亲身体验世界。
-- **情感共鸣**：通过 open a ping 感受“同一片天空下”的共鸣，连接陌生人，感受别样的生活轨迹。
-- **隐私平衡**：半匿名机制既保证了社区的纯净，又给予了用户足够的安全感。
+To learn more about Next.js, take a look at the following resources:
 
----
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## 4. 技术架构建议 (Technical Architecture - Web)
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-### 4.1 技术栈推荐
-- **前端 (Frontend)**：
-    - **框架**：Next.js 14+ (App Router) —— 提供极致的 SEO 和首屏加载速度。
-    - **UI 组件库**：Tailwind CSS + Shadcn UI (打造现代、高级感的界面)。
-    - **地图交互**：Mapbox GL JS (提供精美的矢量地图和 3D 地形展示)。
-    - **状态管理**：Zustand 或 React Query (用于处理地理数据异步同步)。
-- **后端 (Backend)**：
-    - **语言/框架**：Python (FastAPI) —— 充分利用 Python 的 AI 生态。
-    - **地理引擎**：PostGIS (数据库级地理空间计算，处理“附近”查询)。
-    - **缓存/实时**：Redis Geo (用于高性能经纬度匹配) + WebSocket (实现用户进入 ping 范围的实时通知)。
-- **AI 层 (AI Layer)**：
-    - **大模型**：Gemini 1.5 Flash (用于月报文本生成与情感分析)。
-    - **多媒体处理**：Cloudinary 或 AWS S3 (存储并自动处理用户上传的图片/视频)。
+## Deploy on Vercel
 
-### 4.2 Web 端核心挑战与方案
-- **挑战：Web 端如何获取高精度定位？**
-    - **方案**：使用浏览器 `Geolocation API`。在 Web 端，定位精度受限于 Wi-Fi 和 IP，因此需要引导用户在移动端浏览器（如 Safari/Chrome）中开启高精度模式。
-- **挑战：Web 端的交互体验。**
-    - **方案**：采用 PWA (Progressive Web App) 技术，让 Web 程序可以安装到手机主屏，支持离线缓存和沉浸式全屏体验。
-- **挑战：地理数据的渲染压力。**
-    - **方案**：使用 Mapbox 的 `Cluster` 功能，在缩放层级较高时自动聚合密集的 pings，保持页面流畅。
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
----
-
-## 5. 路线图 (Roadmap)
-- **Phase 1**: 基础地图交互与 ping 的发送/开启功能。
-- **Phase 2**: 实现半匿名身份系统与实名后台。
-- **Phase 3**: 开发 AI 月报系统。
-- **Phase 4**: 增加社交互动（如匿名评论、点赞、交换 ping）。
-
----
-
-## 6. 合规与安全
-- **内容审核**：接入第三方 AI 内容审核 API，自动拦截色情、暴力和政治敏感内容。
-- **举报机制**：用户可一键举报异常 ping，实名系统确保违规者可追溯。
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
